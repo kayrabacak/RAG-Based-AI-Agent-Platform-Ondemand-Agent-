@@ -1,0 +1,288 @@
+@page "/chat/{EventId:guid}"
+
+@using OndemandAgent.UI.Services
+@using OndemandAgent.UI.Dtos
+@using OndemandAgent.UI.Components.Layout
+@using Markdig
+@using Microsoft.AspNetCore.Components
+@inject ChatService ChatService
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+@layout VisitorLayout
+
+
+
+@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+
+@if (isLoading)
+{
+    <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: white;">
+        <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        <MudText Class="mt-4" Color="Color.Secondary">Asistana bağlanılıyor...</MudText>
+    </div>
+}
+else if (isEventInactive || eventInfo == null)
+{
+    <div style="height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; background-color: #F8F9FA;">
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center text-center" Style="max-width: 400px; background: transparent;">
+            <div style="background-color: #E0E0E0; padding: 30px; border-radius: 50%; margin-bottom: 20px;">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Style="font-size: 60px; color: #757575;" />
+            </div>
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: #333;">Etkinlik Kapalı</MudText>
+            <MudText Typo="Typo.body1" Class="mt-2 mb-6" Style="color: #666;">
+                <b>@(eventInfo?.Name ?? "Bu etkinlik")</b> şu an erişime kapalıdır.
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="CheckEventStatus" Style="background-color: #594AE2;">
+                Durumu Kontrol Et
+            </MudButton>
+        </MudPaper>
+    </div>
+}
+else if (!isRegistered)
+{
+    <div style="height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; background-color: #F3F4F6;">
+        <MudPaper Elevation="4" Class="pa-8 d-flex flex-column align-center" Style="width: 100%; max-width: 400px; border-radius: 16px;">
+            <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Medium" />
+            </MudAvatar>
+            
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: #111827;" Class="mb-2">Hoşgeldiniz</MudText>
+            <MudText Typo="Typo.body2" Class="mb-6 text-center" Style="color: #6B7280;">
+                <b>@eventInfo.Name</b> asistanı ile konuşmaya başlamak için lütfen isminizi giriniz.
+            </MudText>
+
+            <MudTextField @bind-Value="guestName" Label="Adınız Soyadınız" Variant="Variant.Outlined" FullWidth="true" Class="mb-3" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+            <MudTextField @bind-Value="guestEmail" Label="E-posta Adresiniz (Opsiyonel)" Variant="Variant.Outlined" FullWidth="true" Class="mb-6" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="RegisterGuest" Disabled="@(string.IsNullOrWhiteSpace(guestName) || isRegistering)" Style="height: 50px; font-weight: 700;">
+                @if (isRegistering)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Giriş Yapılıyor...</MudText>
+                }
+                else
+                {
+                    <MudText>Sohbete Başla</MudText>
+                }
+            </MudButton>
+        </MudPaper>
+    </div>
+}
+else
+{
+    <div class="chat-wrapper">
+        <div class="chat-header">
+            <MudAvatar Size="Size.Medium" Class="mr-3" Style="background-color: rgba(255,255,255,0.2);">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Color="Color.Primary" />
+            </MudAvatar>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 700; font-size: 1.1rem; line-height: 1.2;">@eventInfo.Name</span>
+                <span style="font-size: 0.8rem; opacity: 0.9; display: flex; align-items: center;">
+                    <div style="width: 8px; height: 8px; background-color: #4ADE80; border-radius: 50%; margin-right: 6px;"></div>
+                    Çevrimiçi Asistan
+                </span>
+            </div>
+        </div>
+
+        <div class="chat-body" id="chat-scroll-area">
+            <div class="d-flex justify-center my-2">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">Bugün</MudChip>
+            </div>
+
+            @foreach (var msg in messages)
+            {
+                <div class="@(msg.IsUser ? "msg-user" : "msg-ai") msg-anim">
+                    @if (msg.IsUser)
+                    {
+                        @msg.Text
+                    }
+                    else
+                    {
+                        @((MarkupString)ConvertMarkdown(msg.Text))
+                    }
+                    <div class="msg-time" style="@(msg.IsUser ? "color: rgba(255,255,255,0.8);" : "color: #9CA3AF;")">@msg.Time</div>
+                </div>
+            }
+
+            @if (isTyping)
+            {
+                <div class="msg-ai msg-anim">
+                    <div class="d-flex align-center">
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
+                        <span style="font-size: 0.85rem; color: #6B7280;">Yazıyor...</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="chat-footer">
+            <MudTextField @bind-Value="userMessage"
+                          Placeholder="Sorunuzu buraya yazın..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          FullWidth="true"
+                          Class="mr-0"
+                          Style="background-color: #F9FAFB; border-radius: 24px;"
+                          OnKeyDown="HandleKeyPress"
+                          Immediate="true"
+                          Underline="false" />
+
+            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                           Variant="Variant.Filled"
+                           OnClick="SendMessage"
+                           Disabled="@(string.IsNullOrWhiteSpace(userMessage) || isTyping)"
+                           Style="background-color: #594AE2; color: white; border-radius: 50%; width: 48px; height: 48px; min-width: 48px;" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid EventId { get; set; }
+
+    private string userMessage = string.Empty;
+    private bool isTyping = false;
+    private bool isLoading = true;
+    private bool isEventInactive = false;
+
+    private bool isRegistered = false;
+    private bool isRegistering = false;
+    private string guestName = string.Empty;
+    private string guestEmail = string.Empty;
+    private string? attendeeId = null;
+
+    private string eventId = string.Empty;
+    private ChatService.EventInfoDto? eventInfo;
+    private List<Message> messages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        eventId = EventId.ToString();
+        
+        try
+        {
+            var storedId = await LocalStorage.GetItemAsync<string>($"guest_id_{eventId}");
+            var storedName = await LocalStorage.GetItemAsync<string>($"guest_name_{eventId}");
+
+            if (!string.IsNullOrEmpty(storedId))
+            {
+                attendeeId = storedId;
+                guestName = storedName ?? "Misafir";
+                isRegistered = true;
+            }
+        }
+        catch {}
+
+        await CheckEventStatus();
+    }
+
+    private async Task RegisterGuest()
+    {
+        if (string.IsNullOrWhiteSpace(guestName)) return;
+
+        isRegistering = true;
+        
+        var result = await ChatService.RegisterAttendeeAsync(EventId, guestName, guestEmail);
+        
+        if (result != null)
+        {
+            attendeeId = result.Id.ToString();
+            isRegistered = true;
+
+            await LocalStorage.SetItemAsync($"guest_id_{eventId}", attendeeId);
+            await LocalStorage.SetItemAsync($"guest_name_{eventId}", guestName);
+            
+             if (messages.Count == 0 && eventInfo != null)
+                messages.Add(new Message
+                {
+                    Text = $"Merhaba {guestName}! 👋 Ben {eventInfo.Name} asistanıyım. Etkinlik hakkında bana soru sorabilirsiniz.",
+                    IsUser = false,
+                    Time = DateTime.Now.ToString("HH:mm")
+                });
+        }
+
+        isRegistering = false;
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval",
+                "var elem = document.getElementById('chat-scroll-area'); if(elem) { elem.scrollTop = elem.scrollHeight; }");
+        }
+        catch { }
+    }
+
+    private string ConvertMarkdown(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return Markdown.ToHtml(text);
+    }
+
+    private async Task CheckEventStatus()
+    {
+        isLoading = true;
+
+        eventInfo = await ChatService.GetEventInfoAsync(eventId);
+
+        if (eventInfo != null)
+        {
+            if (!eventInfo.IsActive)
+            {
+                isEventInactive = true;
+            }
+            else
+            {
+                isEventInactive = false;
+                if (isRegistered && messages.Count == 0)
+                    messages.Add(new Message
+                    {
+                        Text = $"Merhaba {guestName ?? ""}! 👋 Ben {eventInfo.Name} asistanıyım. Etkinlik hakkında bana soru sorabilirsiniz.",
+                        IsUser = false,
+                        Time = DateTime.Now.ToString("HH:mm")
+                    });
+            }
+        }
+        else
+        {
+            isEventInactive = true;
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SendMessage();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userMessage) || isTyping) return;
+
+        var question = userMessage;
+        userMessage = string.Empty;
+
+        messages.Add(new Message { Text = question, IsUser = true, Time = DateTime.Now.ToString("HH:mm") });
+        isTyping = true;
+        StateHasChanged();
+        await ScrollToBottom();
+
+        var answer = await ChatService.AskQuestionAsync(eventId, question, attendeeId);
+
+        messages.Add(new Message { Text = answer, IsUser = false, Time = DateTime.Now.ToString("HH:mm") });
+        isTyping = false;
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    class Message
+    {
+        public string Text { get; set; } = string.Empty;
+        public bool IsUser { get; set; }
+        public string Time { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,89 @@
+/* Brand ile uyum */
+:global(:root){
+  --brand: #2D0E3B;
+  --brand-2: #4c1d95;
+  --text: #111827;
+  --subtext: #6b7280;
+  --border: #e5e7eb;
+}
+
+/* Sayfa başlığı */
+.dash-title{
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+/* Primary buton daha premium */
+:deep(.dash-primary-btn){
+  border-radius: 999px !important;
+  box-shadow: 0 10px 18px rgba(45, 14, 59, 0.18) !important;
+}
+
+/* MudButton iç rengi (Color.Primary) için hover hissi */
+:deep(.dash-primary-btn:hover){
+  transform: translateY(-1px);
+  box-shadow: 0 14px 22px rgba(45, 14, 59, 0.22) !important;
+}
+
+/* Tablo kartı */
+:deep(.dash-table .mud-table-container){
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(17,24,39,0.06);
+  box-shadow: 0 12px 28px rgba(17,24,39,0.08);
+}
+
+/* Header satırı */
+:deep(.dash-table .mud-table-head){
+  background: radial-gradient(900px 240px at 50% -120px, rgba(45,14,59,0.10), transparent 60%);
+}
+
+:deep(.dash-table th){
+  color: rgba(17,24,39,0.72);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/* Satır hover daha yumuşak */
+:deep(.dash-table tbody tr:hover){
+  background-color: rgba(45,14,59,0.04);
+}
+
+/* Dialog başlığı: brand */
+:deep(.mud-dialog-title) {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  color: white !important;
+  box-shadow: 0 10px 18px rgba(45, 14, 59, 0.22);
+}
+
+:deep(.mud-dialog-title .mud-icon-root),
+:deep(.mud-dialog-close-icon) {
+  color: white !important;
+}
+
+/* Dialog gövdesi de daha “soft” */
+:deep(.mud-dialog) {
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+
+/* Input’lar (dialog içi) yuvarlansın */
+:deep(.mud-input-outlined){
+  border-radius: 14px !important;
+}
+
+/* DatePicker / TextField outline rengi brand’e yakınlaşsın */
+:deep(.mud-input-outlined-border){
+  border-color: rgba(45, 14, 59, 0.22) !important;
+}
+
+:deep(.mud-input-outlined:hover .mud-input-outlined-border){
+  border-color: rgba(45, 14, 59, 0.35) !important;
+}
+
+:deep(.mud-input-focused .mud-input-outlined-border){
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 4px rgba(45,14,59,0.12);
+}
+

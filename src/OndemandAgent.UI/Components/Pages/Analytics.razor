@@ -1,0 +1,256 @@
+@page "/analytics"
+@using OndemandAgent.UI.Dtos
+@using OndemandAgent.UI.Services
+@inject AnalyticsService AnalyticsService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8 mb-8">
+    @if (_loading)
+    {
+        <div class="d-flex justify-center align-center" style="height: 50vh;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+            @if (_selectedEventId.HasValue)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBackToSummary" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium" Class="mr-4" />
+                <div>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight: 700;">@_currentEventName</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary">Etkinlik bazlı detaylı analiz raporu</MudText>
+                </div>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Large" Color="Color.Primary" class="mr-2" />
+                <div>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight: 700;">Analiz Paneli</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary">Genel sistem istatistikleri ve performans raporları</MudText>
+                </div>
+            }
+        </MudStack>
+
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-6 d-flex align-center justify-space-between rounded-lg mud-width-full" Style="background: linear-gradient(135deg, #2D0E3B 0%, #4c1d95 100%); color: white;">
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Style="opacity: 0.8;">TOPLAM ETKİLEŞİM</MudText>
+                        <MudText Typo="Typo.h3" Style="font-weight: bold;">@_data?.TotalQuestions</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Large" Style="opacity: 0.8; font-size: 3rem;" />
+                </MudPaper>
+            </MudItem>
+            
+             <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-6 d-flex align-center justify-space-between rounded-lg mud-width-full">
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">EN POPÜLER ETKİNLİK</MudText>
+                        <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: bold;">
+                           @(_data?.EventStats?.OrderByDescending(x => x.QuestionCount).FirstOrDefault()?.EventName ?? "-")
+                        </MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="Color.Primary" />
+                </MudPaper>
+            </MudItem>
+            
+             <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-6 d-flex align-center justify-space-between rounded-lg mud-width-full">
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">AKTİF ETKİNLİK SAYISI</MudText>
+                        <MudText Typo="Typo.h3" Color="Color.Secondary" Style="font-weight: bold;">
+                             @(_data?.EventStats?.Count ?? 0)
+                        </MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Large" Color="Color.Secondary" />
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid>
+            <MudItem xs="12" md="6" lg="5">
+                 <MudPaper Elevation="2" Class="pa-6 rounded-lg h-100">
+                    <MudText Typo="Typo.h6" Class="mb-4 d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Class="mr-2" Color="Color.Primary"/> En Çok Sorulan Sorular
+                    </MudText>
+                    <MudDivider Class="mb-4" />
+                    
+                    @if (_data?.TopQuestions != null && _data.TopQuestions.Any())
+                    {
+                        <div class="d-flex justify-center align-center">
+                            <MudChart ChartType="ChartType.Pie" 
+                                      InputData="@_pieData" 
+                                      InputLabels="@_pieLabels" 
+                                      Width="100%" 
+                                      Height="300px" />
+                        </div>
+                    }
+                    else
+                    {
+                         <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">Henüz analiz edilecek veri bulunmuyor.</MudAlert>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            @if (!_selectedEventId.HasValue)
+            {
+                <MudItem xs="12" md="6" lg="7">
+                     <MudPaper Elevation="2" Class="pa-6 rounded-lg h-100">
+                        <MudText Typo="Typo.h6" Class="mb-4 d-flex align-center">
+                             <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-2" Color="Color.Secondary"/> Etkinlik Bazlı Soru Dağılımı
+                        </MudText>
+                        <MudDivider Class="mb-4" />
+
+                         @if (_data?.EventStats != null && _data.EventStats.Any())
+                        {
+                            <MudChart ChartType="ChartType.Bar" 
+                                      ChartSeries="@_barSeries" 
+                                      XAxisLabels="@_barLabels" 
+                                      Width="100%" 
+                                      Height="300px" 
+                                      ChartOptions="@(new ChartOptions { YAxisLines = true })"/>
+                        }
+                          else
+                        {
+                             <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">Henüz veri yok.</MudAlert>
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+            
+             @if (_selectedEventId.HasValue)
+            {
+                 <MudItem xs="12" md="6" lg="7">
+                     <MudPaper Elevation="2" Class="pa-6 rounded-lg h-100">
+                        <MudText Typo="Typo.h6" Class="mb-4 d-flex align-center">
+                             <MudIcon Icon="@Icons.Material.Filled.List" Class="mr-2" Color="Color.Secondary"/> Bu Etkinlikteki Top Sorular
+                        </MudText>
+                        <MudDivider Class="mb-4" />
+                         <MudTable Items="@_data?.TopQuestions" Hover="true" Breakpoint="Breakpoint.None" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Soru</MudTh>
+                                <MudTh>Adet</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Soru">
+                                    <MudText Typo="Typo.body2">@context.Text</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Adet">
+                                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@context.Count</MudChip>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                     </MudPaper>
+                 </MudItem>
+            }
+
+            @if (!_selectedEventId.HasValue)
+            {
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-6 rounded-lg mt-4">
+                        <MudText Typo="Typo.h6" Class="mb-4">Tüm Etkinlik İstatistikleri</MudText>
+                         <MudTable Items="@_data?.EventStats" Hover="true" Striped="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                            <HeaderContent>
+                                <MudTh><MudTableSortLabel SortBy="new Func<EventStatDto, object>(x => x.EventName)">Etkinlik Adı</MudTableSortLabel></MudTh>
+                                <MudTh><MudTableSortLabel SortBy="new Func<EventStatDto, object>(x => x.QuestionCount)">Toplam Soru</MudTableSortLabel></MudTh>
+                                <MudTh Style="text-align:right">İşlemler</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Etkinlik Adı">
+                                    <div class="d-flex align-center">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Event" Size="Size.Small" Class="mr-2 text-muted"/>
+                                        @context.EventName
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="Soru Sayısı">@context.QuestionCount</MudTd>
+                                <MudTd Style="text-align:right">
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Visibility"
+                                               OnClick="@(() => ShowEventDetails(context.EventId, context.EventName))">
+                                        Detay Gör
+                                    </MudButton>
+                                </MudTd>
+                            </RowTemplate>
+                            <PagerContent>
+                                <MudTablePager />
+                            </PagerContent>
+                        </MudTable>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private bool _loading = true;
+    private AnalyticsSummaryDto? _data;
+    private Guid? _selectedEventId = null;
+    private string _currentEventName = string.Empty;
+
+    private double[] _pieData = Array.Empty<double>();
+    private string[] _pieLabels = Array.Empty<string>();
+
+    private List<ChartSeries> _barSeries = new();
+    private string[] _barLabels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSummary();
+    }
+
+    private async Task LoadSummary()
+    {
+        _loading = true;
+        try
+        {
+             _data = await AnalyticsService.GetSummaryAsync();
+             PrepareCharts();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ShowEventDetails(Guid eventId, string eventName)
+    {
+        _loading = true;
+        _selectedEventId = eventId;
+        _currentEventName = eventName;
+        
+        try
+        {
+            _data = await AnalyticsService.GetEventDetailsAsync(eventId);
+            PrepareCharts(); 
+        }
+        finally
+        {
+             _loading = false;
+        }
+    }
+
+    private async Task GoBackToSummary()
+    {
+        _selectedEventId = null;
+        await LoadSummary();
+    }
+
+    private void PrepareCharts()
+    {
+        if (_data == null) return;
+
+        _pieData = _data.TopQuestions.Select(x => (double)x.Count).ToArray();
+        _pieLabels = _data.TopQuestions
+            .Select(x => x.Text.Length > 25 ? x.Text.Substring(0, 22) + "..." : x.Text)
+            .ToArray();
+
+        if (_data.EventStats != null)
+        {
+            _barLabels = _data.EventStats.Select(x => x.EventName).ToArray();
+            _barSeries = new List<ChartSeries>
+            {
+                new ChartSeries { Name = "Soru Sayısı", Data = _data.EventStats.Select(x => (double)x.QuestionCount).ToArray() }
+            };
+        }
+    }
+}

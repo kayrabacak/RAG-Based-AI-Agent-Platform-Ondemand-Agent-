@@ -1,0 +1,84 @@
+:global(:root){
+  --brand: #2D0E3B;
+  --brand-2: #4c1d95;
+  --text: #111827;
+  --subtext: #6b7280;
+  --border: #e5e7eb;
+}
+
+/* Sayfa genel boşluk hissi */
+.event-page{
+  /* sadece isimlendirme için, gerekirse ileride kullanırız */
+}
+
+/* Geri butonu daha premium */
+:deep(.event-back-btn){
+  border-radius: 999px !important;
+}
+
+/* Üst (hero) kart */
+:deep(.event-hero){
+  border-radius: 18px !important;
+  overflow: hidden;
+  border: 1px solid rgba(17,24,39,0.06);
+  box-shadow: 0 12px 28px rgba(17,24,39,0.08);
+}
+
+/* Switch alanı hizası daha temiz dursun */
+:deep(.event-hero .mud-card-header){
+  align-items: center;
+}
+
+/* İç kartlar */
+:deep(.event-card){
+  border-radius: 18px !important;
+  border: 1px solid rgba(17,24,39,0.06);
+  box-shadow: 0 12px 28px rgba(17,24,39,0.08);
+}
+
+/* Analiz kartı */
+:deep(.event-analytics){
+  border-radius: 18px !important;
+  border: 1px solid rgba(17,24,39,0.06);
+  box-shadow: 0 12px 28px rgba(17,24,39,0.08);
+}
+
+/* Upload butonu pill olsun */
+:deep(.event-card .mud-button-root){
+  border-radius: 999px !important;
+}
+
+/* TextField’lar daha modern */
+:deep(.mud-input-outlined){
+  border-radius: 14px !important;
+}
+
+:deep(.mud-input-outlined-border){
+  border-color: rgba(45, 14, 59, 0.22) !important;
+}
+
+:deep(.mud-input-outlined:hover .mud-input-outlined-border){
+  border-color: rgba(45, 14, 59, 0.35) !important;
+}
+
+:deep(.mud-input-focused .mud-input-outlined-border){
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 4px rgba(45,14,59,0.12);
+}
+
+/* Chip'ler biraz daha soft */
+:deep(.mud-chip){
+  border-radius: 999px !important;
+}
+
+/* Tablo container’ı */
+:deep(.mud-table-container){
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(17,24,39,0.06);
+}
+
+/* Tablo hover */
+:deep(.mud-table tbody tr:hover){
+  background-color: rgba(45,14,59,0.04);
+}

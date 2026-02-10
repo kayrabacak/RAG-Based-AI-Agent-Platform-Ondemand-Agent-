@@ -1,0 +1,115 @@
+@page "/profile"
+@using OndemandAgent.UI.Dtos
+@using OndemandAgent.UI.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8 mb-8">
+    @if (profile == null)
+    {
+         <div class="d-flex justify-center align-center" style="height: 50vh;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else
+    {
+        <MudPaper Elevation="3" Class="rounded-lg overflow-hidden mb-6 relative" Style="position: relative;">
+            <div style="height: 200px; background: linear-gradient(135deg, #2D0E3B 0%, #7c3aed 100%);"></div>
+            
+            <div class="d-flex flex-column align-center" style="margin-top: -60px; padding-bottom: 24px;">
+                 <MudAvatar Style="width: 120px; height: 120px; border: 4px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" Color="Color.Surface">
+                     <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Style="font-size: 64px;" />
+                 </MudAvatar>
+                 
+                 <MudText Typo="Typo.h5" Class="mt-3" Style="font-weight: 700;">@profile.CompanyName</MudText>
+                 <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Kurumsal Üye</MudText>
+                 
+                 <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled" Class="mt-2" Size="Size.Small" Icon="@Icons.Material.Filled.Star">Premium Paket</MudChip>
+            </div>
+        </MudPaper>
+
+         <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="2" Class="h-100 rounded-lg">
+                    <MudCardHeader>
+                        <CardHeaderAvatar>
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Outlined">
+                                <MudIcon Icon="@Icons.Material.Filled.ContactMail" />
+                            </MudAvatar>
+                        </CardHeaderAvatar>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">İletişim Bilgileri</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList T="string" Dense="true">
+                            <MudListItem Icon="@Icons.Material.Filled.Email" IconColor="Color.Primary" Title="E-Posta Adresi">
+                                <MudText Typo="Typo.body1">@profile.Email</MudText>
+                            </MudListItem>
+                            <MudDivider Class="my-2"/>
+                            <MudListItem Icon="@Icons.Material.Filled.Phone" IconColor="Color.Primary" Title="Telefon">
+                                <MudText Typo="Typo.body1" Class="mud-text-secondary">(Kayıtlı numara yok)</MudText>
+                            </MudListItem>
+                            <MudDivider Class="my-2"/>
+                             <MudListItem Icon="@Icons.Material.Filled.LocationOn" IconColor="Color.Primary" Title="Adres">
+                                <MudText Typo="Typo.body1" Class="mud-text-secondary">İstanbul, Türkiye</MudText>
+                            </MudListItem>
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="2" Class="h-100 rounded-lg">
+                    <MudCardHeader>
+                         <CardHeaderAvatar>
+                            <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined">
+                                <MudIcon Icon="@Icons.Material.Filled.History" />
+                            </MudAvatar>
+                        </CardHeaderAvatar>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Üyelik Geçmişi</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                         <MudList T="string" Dense="true">
+                             <MudListItem Icon="@Icons.Material.Filled.Login" IconColor="Color.Secondary" Title="Son Giriş">
+                                <MudText Typo="Typo.body1">Bugün, @DateTime.Now.ToString("HH:mm")</MudText>
+                            </MudListItem>
+                            <MudDivider Class="my-2"/>
+                            <MudListItem Icon="@Icons.Material.Filled.CalendarToday" IconColor="Color.Secondary" Title="Kayıt Tarihi">
+                                <MudText Typo="Typo.body1">@profile.MemberSince.ToLocalTime().ToString("dd MMMM yyyy")</MudText>
+                            </MudListItem>
+                             <MudDivider Class="my-2"/>
+                             <MudListItem Icon="@Icons.Material.Filled.Update" IconColor="Color.Secondary" Title="Son Güncelleme">
+                                <MudText Typo="Typo.body1">@DateTime.Now.AddDays(-2).ToString("dd MMMM yyyy")</MudText>
+                            </MudListItem>
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private ProfileDto? profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            profile = await AuthService.GetProfile();
+            if (profile == null)
+            {
+                Navigation.NavigateTo("/login");
+            }
+        }
+        catch (Exception)
+        {
+             Navigation.NavigateTo("/login");
+        }
+    }
+}

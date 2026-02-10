@@ -1,0 +1,200 @@
+
+:global(body:has(.chat-wrapper)) {
+  overflow: hidden;
+}
+
+/* Renk değişkenleri */
+:global(:root) {
+  --brand: #2D0E3B;
+  --brand-2: #4c1d95; /* hafif mor ton */
+  --surface: #ffffff;
+  --muted: #f3f4f6;
+  --text: #111827;
+  --subtext: #6b7280;
+  --border: #e5e7eb;
+}
+
+/* Ana kapsayıcı */
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  max-width: 720px;              /* biraz daha ferah */
+  margin: 0 auto;
+  background-color: var(--surface);
+  position: relative;
+
+  /* modern kart görünümü */
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  border-radius: 28px;
+
+  /* köşeler yuvarlakken taşan yerleri gizle */
+  overflow: hidden;
+}
+
+/* Mobilde full-bleed (kenarlarda boşluk kalmasın) */
+@media (max-width: 640px) {
+  .chat-wrapper {
+    max-width: 100%;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+}
+
+/* Header */
+.chat-header {
+  background: linear-gradient(135deg, var(--brand, #2D0E3B) 0%, var(--brand-2, #4c1d95) 100%);
+  color: #fff;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  height: 68px;
+  flex-shrink: 0;
+
+  box-shadow: 0 8px 18px rgba(45, 14, 59, 0.28);
+}
+
+/* Chat alanı */
+.chat-body {
+  flex-grow: 1;
+  padding: 18px 18px 14px;
+  overflow-y: auto;
+  background:
+    radial-gradient(900px 500px at 50% -100px, rgba(45, 14, 59, 0.08), transparent 60%),
+    var(--surface);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  /* scroll daha yumuşak */
+  scroll-behavior: smooth;
+}
+
+/* Mobilde padding’i biraz azalt */
+@media (max-width: 640px) {
+  .chat-body {
+    padding: 14px 12px 12px;
+  }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg-anim { animation: slideIn 0.25s ease-out forwards; }
+
+/* Mesaj balonları */
+.msg-user,
+.msg-ai {
+  max-width: min(86%, 560px);
+  word-break: break-word;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  border-radius: 20px;
+}
+
+/* Kullanıcı mesajı */
+.msg-user {
+  align-self: flex-end;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand, #2D0E3B) 0%, #3b1450 100%);
+  box-shadow: 0 10px 18px rgba(45, 14, 59, 0.18);
+  border-bottom-right-radius: 10px; /* “tail” hissi */
+}
+
+/* AI mesajı */
+.msg-ai {
+  align-self: flex-start;
+  color: var(--text);
+  background: rgba(243, 244, 246, 0.9);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  box-shadow: 0 8px 16px rgba(17, 24, 39, 0.06);
+  border-bottom-left-radius: 10px;
+  backdrop-filter: blur(6px);
+}
+
+/* AI içindeki markdown stilleri */
+.msg-ai strong { font-weight: 800; color: var(--brand, #2D0E3B); }
+.msg-ai ul { padding-left: 18px; margin: 6px 0; }
+.msg-ai li { margin-bottom: 4px; }
+.msg-ai p { margin: 0 0 8px 0; }
+.msg-ai p:last-child { margin-bottom: 0; }
+
+/* Saat */
+.msg-time {
+  font-size: 0.72rem;
+  margin-top: 6px;
+  opacity: 0.75;
+  text-align: right;
+  color: var(--subtext);
+}
+
+/* Footer */
+.chat-footer {
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.92);
+  border-top: 1px solid rgba(229, 231, 235, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  /* iOS/Android’da klavye açılınca daha stabil */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(10px);
+}
+
+/* Mobilde footer daha kompakt */
+@media (max-width: 640px) {
+  .chat-footer {
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+}
+
+/* (Opsiyonel ama güzel) scroll bar */
+.chat-body::-webkit-scrollbar { width: 10px; }
+.chat-body::-webkit-scrollbar-thumb {
+  background: rgba(45, 14, 59, 0.18);
+  border-radius: 999px;
+  border: 3px solid rgba(255,255,255,0.6);
+}
+.chat-body::-webkit-scrollbar-track { background: transparent; }
+
+:deep(.chat-input .mud-input-root),
+:deep(.chat-input .mud-input-slot) {
+  border-radius: 999px !important;
+}
+
+:deep(.chat-input .mud-input-outlined-border) {
+  border-color: rgba(45, 14, 59, 0.22) !important;
+}
+
+:deep(.chat-input .mud-input-root:hover .mud-input-outlined-border) {
+  border-color: rgba(45, 14, 59, 0.38) !important;
+}
+
+:deep(.chat-input.mud-input-focused .mud-input-outlined-border),
+:deep(.chat-input .mud-input-root.mud-input-focused .mud-input-outlined-border) {
+  border-color: var(--brand, #2D0E3B) !important;
+  box-shadow: 0 0 0 4px rgba(45, 14, 59, 0.12);
+}
+
+:deep(.chat-send) {
+  border-radius: 999px !important;
+}
+
+:deep(.chat-send .mud-icon-button-label) {
+  color: white !important;
+}
+
+:deep(.chat-send.mud-disabled) {
+  opacity: 0.5;
+}
+

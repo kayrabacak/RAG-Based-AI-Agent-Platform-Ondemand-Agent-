@@ -1,0 +1,233 @@
+@page "/event/{EventId}"
+@using OndemandAgent.UI.Dtos
+@using OndemandAgent.UI.Services
+@using Microsoft.AspNetCore.Components.Forms 
+@inject EventService EventService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8 event-page">
+    
+    <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Href="/dashboard" Color="Color.Inherit" Class="mb-4 event-back-btn">Listeye Dön</MudButton>
+
+    @if (myEvent == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        <MudText Align="Align.Center" Class="mt-2">Etkinlik detayları yükleniyor...</MudText>
+    }
+    else
+    {
+        <MudCard Elevation="3" Class="mb-6 event-hero">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h4">@myEvent.Name</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@myEvent.Description</MudText>
+                    
+                    <div class="d-flex mt-3 gap-2">
+                         <MudChip T="string" Icon="@Icons.Material.Filled.Event" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                             Başlangıç: @myEvent.StartDate.ToLocalTime().ToString("g")
+                         </MudChip>
+                         <MudChip T="string" Icon="@Icons.Material.Filled.EventBusy" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">
+                             Bitiş: @myEvent.EndDate.ToLocalTime().ToString("g")
+                         </MudChip>
+                    </div>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudSwitch T="bool" 
+                               Value="@myEvent.IsActive" 
+                               ValueChanged="@((bool isActive) => ToggleStatus(isActive))"
+                               Color="Color.Success"
+                               ThumbIcon="@(myEvent.IsActive ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)">
+                        <MudText Typo="Typo.body2" Color="@(myEvent.IsActive ? Color.Success : Color.Error)">
+                            @(myEvent.IsActive ? "Aktif (Yayında)" : "Pasif (Gizli)")
+                        </MudText>
+                    </MudSwitch>
+                </CardHeaderActions>
+            </MudCardHeader>
+        </MudCard>
+
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="3" Class="pa-4 event-card" Style="height: 100%">
+                    <MudText Typo="Typo.h6" Class="mb-4"><MudIcon Icon="@Icons.Material.Filled.CloudUpload" /> Bilgi Kaynağı (PDF)</MudText>
+                    
+                    <MudFileUpload T="IBrowserFile" FilesChanged="UploadFile">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AttachFile">
+                                PDF Seç ve Yükle
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+                    @if (isUploading)
+                    {
+                        <MudProgressLinear Color="Color.Info" Indeterminate="true" Class="mt-3" />
+                        <MudText Typo="Typo.caption">Yapay zeka dosyayı okuyor...</MudText>
+                    }
+
+                    <MudList T="string" Class="mt-4">
+                        @if (myEvent.Documents != null && myEvent.Documents.Any())
+                        {
+                            @foreach (var doc in myEvent.Documents)
+                            {
+                                <MudListItem Icon="@Icons.Material.Filled.Description">
+                                    @doc.FileName 
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="ml-2">@doc.StatusDisplay</MudChip>
+                                </MudListItem>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="mt-2">Henüz dosya yüklenmemiş.</MudText>
+                        }
+                    </MudList>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="3" Class="pa-4 event-card" Style="height: 100%">
+                    <MudText Typo="Typo.h6" Class="mb-4"><MudIcon Icon="@Icons.Material.Filled.QrCode" /> Ziyaretçi Girişi</MudText>
+                    
+                    <MudAlert Severity="Severity.Info" Class="mb-3">
+                        Ziyaretçileriniz bu linke tıklayarak veya QR kodu okutarak sohbete başlayabilir.
+                    </MudAlert>
+
+                    <MudTextField Value="@visitorLink" Label="Ziyaretçi Linki" ReadOnly="true" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy" />
+
+                    <div class="d-flex justify-center mt-5">
+                        <img src="@($"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={visitorLink}")" style="border: 1px solid #ccc; padding: 10px;" />
+                    </div>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <MudCard Elevation="3" Class="mt-6 pa-4 event-analytics">
+            <MudText Typo="Typo.h6" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.Analytics" Class="mr-2"/> Etkinlik Analizi
+            </MudText>
+
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="d-flex flex-column align-center justify-center py-8" Elevation="2" Style="background-color: #E3F2FD;">
+                        <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h3" Color="Color.Primary" Class="mt-2">@chatLogs.Count</MudText>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Toplam Soru</MudText>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" md="9">
+                    @if (chatLogs.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info">Henüz bu etkinlikte kimse soru sormadı.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@chatLogs" Height="300px" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                            <HeaderContent>
+                                <MudTh>Tarih</MudTh>
+                                <MudTh>Kullanıcı Sorusu</MudTh>
+                                <MudTh>AI Cevabı</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Tarih">@context.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudTd>
+                                <MudTd DataLabel="Soru" Style="font-weight: bold;">@context.UserQuestion</MudTd>
+                                <MudTd DataLabel="Cevap">
+                                    <MudText Typo="Typo.body2" Style="white-space: pre-wrap; max-height: 100px; overflow-y: auto;">
+                                        @context.AgentAnswer
+                                    </MudText>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudCard>
+    }
+
+</MudContainer>
+
+@code {
+    [Parameter] public string EventId { get; set; }
+    
+    private EventDto? myEvent;
+    private string visitorLink = string.Empty;
+    private bool isUploading = false;
+    private List<ChatLogDto> chatLogs = new List<ChatLogDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventData();
+    }
+
+    private async Task LoadEventData()
+    {
+        if (string.IsNullOrEmpty(EventId)) return;
+        
+        myEvent = await EventService.GetEventById(EventId);
+        
+        if (myEvent != null)
+        {
+            var baseUri = Navigation.BaseUri; 
+            visitorLink = $"{baseUri}chat/{EventId}";
+            
+            chatLogs = await EventService.GetEventLogs(EventId);
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (file == null) return;
+
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            bool success = await EventService.UploadDocument(EventId, file);
+
+            if (success)
+            {
+                await LoadEventData(); 
+                
+            }
+            else
+            {
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload Hatası: {ex.Message}");
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged(); 
+        }
+    }
+
+    private async Task ToggleStatus(bool isActive)
+    {
+        if (myEvent == null) return;
+
+        myEvent.IsActive = isActive;
+        
+        var updateRequest = new CreateEventRequest
+        {
+            Name = myEvent.Name,
+            Description = myEvent.Description,
+            StartDate = myEvent.StartDate,
+            EndDate = myEvent.EndDate,
+            IsActive = isActive
+        };
+
+        var success = await EventService.UpdateEvent(myEvent.Id, updateRequest);
+
+        if (!success)
+        {
+            myEvent.IsActive = !isActive;
+        }
+    }
+}

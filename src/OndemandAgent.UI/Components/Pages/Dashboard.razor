@@ -1,0 +1,213 @@
+@page "/dashboard"
+@using OndemandAgent.UI.Dtos
+@using OndemandAgent.UI.Services
+@inject EventService EventService
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    
+    <div class="dash-header d-flex justify-space-between align-center mb-5">
+    <MudText Typo="Typo.h4" Class="dash-title">Etkinliklerim</MudText>
+
+    <MudButton Class="dash-primary-btn" Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+        Yeni Etkinlik Oluştur
+    </MudButton>
+</div>
+
+    @if (isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        @if (events.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">Henüz hiç etkinliğiniz yok. Yukarıdaki butondan oluşturabilirsiniz.</MudAlert>
+        }
+        else
+        {
+            <MudTable Class="dash-table" Items="@events" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3">
+                <HeaderContent>
+                    <MudTh>Etkinlik Adı</MudTh>
+                    <MudTh>Başlangıç</MudTh>
+                    <MudTh>Bitiş</MudTh>
+                    <MudTh>Durum</MudTh>
+                    <MudTh>İşlemler</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Adı"><strong>@context.Name</strong></MudTd>
+                    <MudTd DataLabel="Başlangıç">@context.StartDate.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Bitiş">@context.EndDate.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Durum">
+                        @if(context.IsActive) { <MudChip T="string" Color="Color.Success" Size="Size.Small">Aktif</MudChip> }
+                        else { <MudChip T="string" Color="Color.Error" Size="Size.Small">Pasif</MudChip> }
+                    </MudTd>
+                    <MudTd DataLabel="İşlemler">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small" 
+                                   OnClick="@(() => GoToDetails(context.Id))" Class="mr-2">
+                            Yönet
+                        </MudButton>
+                        
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       Size="Size.Small"
+                                       OnClick="@(() => DeleteEventConfirm(context.Id))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+
+</MudContainer>
+
+<MudDialog @bind-Visible="isDialogOpen" Class="custom-dialog-header" Options="new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true }">
+    
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color: white;">
+            <MudIcon Icon="@Icons.Material.Filled.EditCalendar" Class="mr-3 mb-n1"/> 
+            Yeni Etkinlik Oluştur
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudContainer Style="max-height: 500px; overflow-y: scroll">
+            
+            <MudTextField @bind-Value="newEvent.Name" Label="Etkinlik Adı" 
+                          Variant="Variant.Outlined" Margin="Margin.Dense" 
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Event" 
+                          Class="mb-4" Required="true" />
+
+            <MudTextField @bind-Value="newEvent.Description" Label="Açıklama" 
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" 
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Description" 
+                          Class="mb-4" />
+
+            <MudGrid Class="mb-2">
+                <MudItem xs="6">
+                    <MudDatePicker Label="Başlangıç Tarihi" @bind-Date="startDate" 
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Primary" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTimePicker Label="Başlangıç Saati" @bind-Time="startTime" 
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Primary" />
+                </MudItem>
+                
+                <MudItem xs="6">
+                    <MudDatePicker Label="Bitiş Tarihi" @bind-Date="endDate" 
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Secondary" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTimePicker Label="Bitiş Saati" @bind-Time="endTime" 
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Secondary" />
+                </MudItem>
+            </MudGrid>
+
+            <MudPaper Class="pa-3 d-flex justify-space-between align-center" Elevation="0" Style="background-color: #F5F5F5; border-radius: 8px;">
+                <div class="d-flex flex-column">
+                    <MudText Typo="Typo.subtitle2">Etkinlik Durumu</MudText>
+                    <MudText Typo="Typo.caption">Etkinlik hemen yayınlansın mı?</MudText>
+                </div>
+                <MudSwitch @bind-Value="newEvent.IsActive" Color="Color.Success" ThumbIcon="@(newEvent.IsActive ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)">
+                    @(newEvent.IsActive ? "Yayında" : "Taslak")
+                </MudSwitch>
+            </MudPaper>
+
+        </MudContainer>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="CloseDialog" Variant="Variant.Text" Color="Color.Default">İptal</MudButton>
+        <MudButton OnClick="CreateEvent" Variant="Variant.Filled" Color="Color.Primary" Class="ml-2 px-4">Oluştur</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<EventDto> events = new List<EventDto>();
+    private bool isLoading = true;
+    
+    private bool isDialogOpen = false;
+    private CreateEventRequest newEvent = new CreateEventRequest();
+    private DateTime? startDate = DateTime.Now;
+    private TimeSpan? startTime = DateTime.Now.TimeOfDay; 
+    
+    private DateTime? endDate = DateTime.Now.AddDays(7);
+    private TimeSpan? endTime = DateTime.Now.TimeOfDay; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEvents();
+    }
+
+    private async Task LoadEvents()
+    {
+        isLoading = true;
+        try 
+        {
+            events = await EventService.GetMyEvents();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hata: {ex.Message}");
+        }
+        isLoading = false;
+    }
+
+    private void OpenCreateDialog()
+    {
+        newEvent = new CreateEventRequest();
+        isDialogOpen = true;
+        StateHasChanged(); 
+    }
+
+    private void CloseDialog()
+    {
+        isDialogOpen = false;
+    }
+
+    private async Task CreateEvent()
+    {
+        var sDate = startDate ?? DateTime.Now;
+        var sTime = startTime ?? TimeSpan.Zero;
+        var localStart = new DateTime(sDate.Year, sDate.Month, sDate.Day, sTime.Hours, sTime.Minutes, 0, DateTimeKind.Local);
+        newEvent.StartDate = localStart.ToUniversalTime();
+
+        var eDate = endDate ?? DateTime.Now;
+        var eTime = endTime ?? TimeSpan.Zero;
+        var localEnd = new DateTime(eDate.Year, eDate.Month, eDate.Day, eTime.Hours, eTime.Minutes, 0, DateTimeKind.Local);
+        newEvent.EndDate = localEnd.ToUniversalTime();
+        
+        bool success = await EventService.CreateEvent(newEvent);
+        
+        if (success)
+        {
+            isDialogOpen = false;
+            await LoadEvents(); 
+        }
+    }
+
+    private async Task DeleteEventConfirm(Guid eventId)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Etkinliği Sil", 
+            "Bu etkinliği silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", 
+            yesText:"Evet, Sil", cancelText:"İptal");
+
+        if (result == true)
+        {
+            var success = await EventService.DeleteEvent(eventId);
+            if (success)
+            {
+                await LoadEvents(); 
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void GoToDetails(Guid eventId)
+    {
+        Navigation.NavigateTo($"/event/{eventId}");
+    }
+}
