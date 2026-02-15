@@ -116,3 +116,11 @@ dotnet run
 
 -   **Environment Variables**: extensive configuration is managed via `appsettings.json` in the .NET projects and `.env` files for Python services (make sure to create `.env` from `.env.example` if available).
 -   **Database Connection**: Ensure the connection string in `src/OndemandAgent.Web/appsettings.json` matches your Docker container settings.
+
+
+## 🤝 Contributing
+Contributions are welcome! Please fork the repository and submit a pull request.
+
+## 📝 License
+This project is licensed under the MIT License.
+
